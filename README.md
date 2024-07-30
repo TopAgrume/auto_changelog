@@ -1,4 +1,4 @@
-# Changelog Management Scripts
+# Auto_Changelog Management Scripts
 
 This repository contains two bash scripts designed to help manage changelogs in a Git repository: `create_log_commit.sh` and `create_log_tag.sh`. These scripts work together to create a streamlined process for maintaining changelogs across different branches and merging them when creating new tags.
 
