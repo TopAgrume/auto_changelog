@@ -63,9 +63,11 @@ Now, you just need to:
 <br>
 
 **Example:**
+
 ![commit_prompt](images/commit_prompt.png)
 
 **Given instructions inside stdout:**
+
 ![commit_instructions](images/commit_instructions.png)
 ### create_log_tag.sh
 
