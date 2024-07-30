@@ -50,6 +50,23 @@ Arguments:
 - `type`: The type of change (e.g., 'feat', 'fix', 'update', etc.)
 - `destination_file`: (Optional) The changelog file to update (default: changelog.md)
 
+<br>
+
+A new window opens on a temporary file and presents the content of a `git status`.
+Now, you just need to:
+- Write the commit message between the `"""` `"""`.
+- Write the description of changes for the logs of each modified file.
+    - Each comment starting with a `#` is ignored by the logs.
+    - Each line starting with a `#` (or deleted) is ignored by the logs and by git.
+- Save the file (it will automatically delete)
+
+<br>
+
+**Example:**
+![commit_prompt](images/commit_prompt.png)
+
+**Given instructions inside stdout:**
+![commit_instructions](images/commit_instructions.png)
 ### create_log_tag.sh
 
 Run this script when you want to create a new tag and update the main changelog:
@@ -76,7 +93,7 @@ Arguments:
 - Interactive Mode
 - Integration with CI/CD
 - Git Hook Integration
-
+- Customizable Categories / Changelog Formatting Options
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
