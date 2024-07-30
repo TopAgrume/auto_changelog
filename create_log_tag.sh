@@ -1,5 +1,9 @@
 #!/bin/bash
 
+##################
+# CREATE LOG TAG #
+##################
+
 # Function to handle interruption signal SIGINT
 interrupt_handler() {
     echoc $RED "\nCtrl+C detected. Task aborted."
@@ -121,7 +125,7 @@ fi
 
 titles=()
 descriptions=()
-directory="logs"
+directory=".logs"
 
 # Find key, value pairs inside log files
 for file in "$directory"/*; do
@@ -133,13 +137,6 @@ for file in "$directory"/*; do
         done < <(awk '/^###/{category=$0; next} NF{print category; print "- " $0}' $file)
     fi
 done
-
-# Print the titles and descriptions
-# Uncomment to debug hard
-#for ((i=0; i<${#titles[@]}; i++)); do
-#    logger "Title: ${titles[i]}"
-#    logger "Description: ${descriptions[i]}"
-#done
 
 echoc $BLUE "Writting logs inside " -n
 echo -n "'$dest_file'"
@@ -165,21 +162,22 @@ add_changelog_key() {
 # Function to write logs to the changelog file
 # >> This part can be optimized by building the string blocks
 # >> by type and injecting them only once for each type
-write_logs_to_changelog() {
-    local nb_log=0
-    for ((i=0; i<${#titles[@]}; i++)); do
-        # Find the write location and add the tokens
-        local pattern="${titles[$i]}"
-        add_changelog_key "$pattern"
-        local line_number=$(grep -nm 1 "$pattern" "$dest_file" | awk -F: 'NR==1 {print $1}')
-
-        local new_line="${descriptions[$i]}"
-        sed -i "$((line_number + 1))i $new_line" "$dest_file"
-        ((nb_log+=1))
+process_metalogs() {
+    local dest_file="$1"
+    for metalog in .logs/*.metalogs; do
+        if [ -f "$metalog" ]; then
+            echo "Processing $metalog"
+            while IFS= read -r line; do
+                if [[ $line == "### "* ]]; then
+                    pattern="$line"
+                    add_changelog_key "$pattern"
+                    line_number=$(grep -nm 1 "$pattern" "$dest_file" | awk -F: 'NR==1 {print $1}')
+                else
+                    sed -i "$((line_number + 1))i $line" "$dest_file"
+                fi
+            done < "$metalog"
+        fi
     done
-
-    echoc $BLUE "Number of logs added in '$dest_file': " -n
-    echoc $WHITE "$nb_log\n"
 }
 
 write_tag_to_changelog() {
@@ -193,17 +191,18 @@ write_tag_to_changelog() {
     fi
 }
 
-write_logs_to_changelog
+process_metalogs "$dest_file"
 write_tag_to_changelog
 
 # Delete old logs
 rm "$directory"/*
+echoc $BLUE "All metalogs have been deleted."
 
 # Function to perform Git add operation
 git_add_files() {
     echoc $BLUE "Git add $dest_file"
     git add --all "$dest_file"
-    git add --all "$directory"
+    git rm -r "$directory"
 }
 
 # Function to perform Git commit operation

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#####################
+# CREATE LOG COMMIT #
+#####################
+
 # Function to handle interruption signal SIGINT
 interrupt_handler() {
     echoc $RED "\nCtrl+C detected. Deleting current commit file."
@@ -41,6 +45,13 @@ echoc() {
     echo -e $option "$color$message$RESET"
 }
 
+# Crash if not enough parameters are provided
+if [ $# -eq 0 ]; then
+    echoc $RED "Usage: $0 [OPTIONS] <type(string)> [<destination_file(path)>]"
+    echoc $RED "Command --help will provide help."
+    exit 1
+fi
+
 # echo pair with colors
 echopc() {
     local color=$1
@@ -56,12 +67,16 @@ check_file_exists() {
     [ -f "$file" ] || { echoc $RED "Provided path '$file' does not exist"; exit 1; }
 }
 
-# Crash if not enough parameters are provided
-if [ $# -eq 0 ]; then
-    echoc $RED "Usage: $0 [OPTIONS] <type(string)> [<destination_file(path)>]"
-    echoc $RED "Command --help will provide help."
-    exit 1
-fi
+# Get the current branch
+get_current_branch() {
+    git rev-parse --abbrev-ref HEAD
+}
+
+log_directory=".logs"
+current_branch=$(get_current_branch)
+metalog_file="${log_directory}/${current_branch}.metalogs"
+
+mkdir -p ${log_directory}
 
 verbose=1
 disable_tag=1
@@ -339,6 +354,7 @@ git_add_files() {
         git add --all "$file"
     done
     git add --all "$dest_file"
+    git add --all "$metalog_file"
 }
 
 # Function to perform Git commit operation
@@ -352,7 +368,7 @@ git_commit_files() {
 # Function to write logs to the changelog file
 # >> This part can be optimized by building the string blocks
 # >> by type and injecting them only once for each type
-write_logs_to_changelog() {
+write_logs_to_metalog() {
     local nb_skipped=0
     for ((i=0; i<${#types[@]}; i++)); do
         # Skip tokens without description (no-log)
@@ -366,39 +382,20 @@ write_logs_to_changelog() {
         local pattern=""
         if [[ "${types[$i]}" =~ .*\!$ ]]; then
             # Detect breaking changes
-            pattern="### ${changelog_category["!"]}"
+            pattern="${changelog_category["!"]}"
         else
-            pattern="### ${changelog_category[${types[$i]}]}"
+            pattern="${changelog_category[${types[$i]}]}"
         fi
-        add_changelog_key "$pattern"
-        local line_number=$(grep -nm 1 "$pattern" "$dest_file" | awk -F: 'NR==1 {print $1}')
 
-        local new_line=" - ($(basename ${files[$i]})) ${desc[$i]}"
-        sed -i "$((line_number + 1))i $new_line" "$dest_file"
+        echo "### $pattern" >> "$metalog_file"
+        echo " - ($(basename ${files[$i]})) ${desc[$i]}" >> "$metalog_file"
     done
 
     echoc $BLUE "Number of files ignored by logs: " -n
     echoc $WHITE "$nb_skipped\n"
 }
 
-write_logs_to_changelog
-
-# Read and create a new tag in destination file
-if [ $disable_tag -eq 1 ]; then
-    echoc $WHITE "Do you want to package all the changes so far in the logs into a new tag ?"
-    echoc $WHITE "Give the name of the tag (ex: 2.2.8dev), otherwise pass: " -n
-    read version
-fi
-
-# Write new tag inside logs
-if [ "$version" != "" ] && [ "$version" != "n" ]; then
-    current_date=$(date +'%Y-%m-%d')
-    new_tag="[$version] - $current_date"
-    sed -i "4i ## $new_tag" "$dest_file"
-
-    echoc $BLUE "New tag added: " -n
-    echo "$new_tag"
-fi
+write_logs_to_metalog
 
 git_add_files
 git_commit_files
