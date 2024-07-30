@@ -32,7 +32,6 @@ help_message() {
     echo "Options:"
     echo "  --help        Display this help message"
     echo "  -v            Enable verbose mode"
-    echo "  -d            Disable tag"
     echo
     echo "Example: $0 -v style /path/to/changelog.md"
 }
@@ -79,7 +78,6 @@ metalog_file="${log_directory}/${current_branch}.metalogs"
 mkdir -p ${log_directory}
 
 verbose=1
-disable_tag=1
 dest_file=""
 default_type=""
 
@@ -90,11 +88,6 @@ while [[ "$#" -gt 0 ]]; do
         help_message; exit 0 ;;
     -v)
         verbose=0 ;;
-    -d)
-        disable_tag=0 ;;
-    -vd | -dv)
-        verbose=0
-        disable_tag=0 ;;
     -*)
         echoc $RED "Unknown option '$1'. Command --help will provide help."
         exit 1 ;;
@@ -222,7 +215,6 @@ print_possibilities() {
     echopc $L_B " - Default Type:" "$default_type"
     echopc $L_B " - Destination Log File:" "$dest_file"
     echopc $L_B " - Verbose Mode (0 is True):" "$verbose"
-    echopc $L_B " - Disable Tag (0 is True):" "$disable_tag"
 }
 
 clear; print_possibilities

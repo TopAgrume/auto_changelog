@@ -126,7 +126,7 @@ fi
 titles=()
 descriptions=()
 directory=".logs"
-
+or non-interactive modes
 # Find key, value pairs inside log files
 for file in "$directory"/*; do
     if [ -f "$file" ]; then
@@ -211,7 +211,12 @@ git_commit_files() {
     git commit -m "update(changelog): '$dest_file' updated for new version, old logs deleted"
 }
 
+git_tag_project() {
+    git tag -a $version -m "Release version $version"
+}
+
 git_add_files
 git_commit_files
+git_tag_project
 
 echoc $BLUE "Operation complete!"
